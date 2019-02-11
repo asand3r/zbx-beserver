@@ -1,0 +1,875 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>4.0</version>
+    <date>2019-01-26T15:09:29Z</date>
+    <groups>
+        <group>
+            <name>Templates</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <template>Template Backup Exec Server</template>
+            <name>Template Backup Exec Server</name>
+            <description>Veritas/Simantec Backup Exec Server template&#13;
+All checks executes with T-SQL, so you must configure Zabbix to use FreeTDS for MS SQL Server.&#13;
+Backup Jobs ODBC LLD rules:&#13;
+- Backup Exec Windows Service&#13;
+- Backup Exec Jobs (FULL)&#13;
+- Backup Exec Jobs (INCREMENTAL)&#13;
+Two rules needs for creating triggers with different severity levels for Full job types and Incremental job types.&#13;
+&#13;
+Macroses {$BE.USER} and {$BE.PASSWORD} must be set on template or host level before usage. These are username and password to connect to BEDB database.&#13;
+&#13;
+LLD returns {#JOB.TYPE} macros, containig 'FULL' or 'INCR' string to determine backup job type.&#13;
+On database level it's:&#13;
+16777216 - INCR&#13;
+16973824 - FULL&#13;
+&#13;
+Documentation will be available soon on my GitHub page (https://github.com/asand3r).</description>
+            <groups>
+                <group>
+                    <name>Templates</name>
+                </group>
+            </groups>
+            <applications>
+                <application>
+                    <name>Backup Exec Services</name>
+                </application>
+            </applications>
+            <items/>
+            <discovery_rules>
+                <discovery_rule>
+                    <name>Backup Exec Jobs Discovery (FULL)</name>
+                    <type>11</type>
+                    <snmp_community/>
+                    <snmp_oid/>
+                    <key>db.odbc.discovery[be.jobs.full,{HOST.HOST}]</key>
+                    <delay>1h</delay>
+                    <status>0</status>
+                    <allowed_hosts/>
+                    <snmpv3_contextname/>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                    <snmpv3_privpassphrase/>
+                    <params>SELECT JobID as 'JOB.ID', JobName as 'JOB.NAME', CurrentStatus as 'JOB.STATUS', IIF (JobRunFlags = 16777216, 'INCR', 'FULL') as 'JOB.TYPE'&#13;
+FROM BEDB.dbo.vwJobs&#13;
+WHERE TaskTypeID = 200 and CurrentStatus IN ('16','17','18');</params>
+                    <ipmi_sensor/>
+                    <authtype>0</authtype>
+                    <username>{$BE.USER}</username>
+                    <password>{$BE.PASSWORD}</password>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <filter>
+                        <evaltype>0</evaltype>
+                        <formula/>
+                        <conditions>
+                            <condition>
+                                <macro>{#JOB.TYPE}</macro>
+                                <value>^FULL$</value>
+                                <operator>8</operator>
+                                <formulaid>A</formulaid>
+                            </condition>
+                        </conditions>
+                    </filter>
+                    <lifetime>7d</lifetime>
+                    <description>Discover Full Backup Exec jobs by SQL query.</description>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>{#JOB.NAME}: Final Job Status</name>
+                            <type>11</type>
+                            <snmp_community/>
+                            <snmp_oid/>
+                            <key>db.odbc.select[be.job.full.{#JOB.NAME}.finaljobstatus,{HOST.HOST}]</key>
+                            <delay>15m</delay>
+                            <history>{$HISTORY}</history>
+                            <trends>{$TRENDS}</trends>
+                            <status>0</status>
+                            <value_type>3</value_type>
+                            <allowed_hosts/>
+                            <units/>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <params>SELECT ISNULL ((SELECT TOP 1 FinalJobStatus FROM BEDB.dbo.JobHistorySummary WHERE JobID = '{#JOB.ID}' and IsJobActive != 1 ORDER BY EndTime DESC), 0);</params>
+                            <ipmi_sensor/>
+                            <authtype>0</authtype>
+                            <username>{$BE.USER}</username>
+                            <password>{$BE.PASSWORD}</password>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description>{#JOB.NAME} final job status</description>
+                            <inventory_link>0</inventory_link>
+                            <applications/>
+                            <valuemap>
+                                <name>Backup Exec Job Status</name>
+                            </valuemap>
+                            <logtimefmt/>
+                            <preprocessing/>
+                            <jmx_endpoint/>
+                            <timeout>3s</timeout>
+                            <url/>
+                            <query_fields/>
+                            <posts/>
+                            <status_codes>200</status_codes>
+                            <follow_redirects>1</follow_redirects>
+                            <post_type>0</post_type>
+                            <http_proxy/>
+                            <headers/>
+                            <retrieve_mode>0</retrieve_mode>
+                            <request_method>1</request_method>
+                            <output_format>0</output_format>
+                            <allow_traps>0</allow_traps>
+                            <ssl_cert_file/>
+                            <ssl_key_file/>
+                            <ssl_key_password/>
+                            <verify_peer>0</verify_peer>
+                            <verify_host>0</verify_host>
+                            <application_prototypes>
+                                <application_prototype>
+                                    <name>BE Job: {#JOB.NAME}</name>
+                                </application_prototype>
+                            </application_prototypes>
+                            <master_item/>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>{#JOB.NAME}: Total Data Size, bytes</name>
+                            <type>11</type>
+                            <snmp_community/>
+                            <snmp_oid/>
+                            <key>db.odbc.select[be.job.full.{#JOB.NAME}.totalbytes,{HOST.HOST}]</key>
+                            <delay>15m</delay>
+                            <history>{$HISTORY}</history>
+                            <trends>{$TRENDS}</trends>
+                            <status>0</status>
+                            <value_type>3</value_type>
+                            <allowed_hosts/>
+                            <units>B</units>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <params>SELECT ISNULL ((SELECT TOP 1 TotalDataSizeBytes FROM BEDB.dbo.JobHistorySummary WHERE JobID = '{#JOB.ID}' and IsJobActive != 1 ORDER BY EndTime DESC), 0);</params>
+                            <ipmi_sensor/>
+                            <authtype>0</authtype>
+                            <username>{$BE.USER}</username>
+                            <password>{$BE.PASSWORD}</password>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description>{#JOB.NAME} total bytes</description>
+                            <inventory_link>0</inventory_link>
+                            <applications/>
+                            <valuemap/>
+                            <logtimefmt/>
+                            <preprocessing/>
+                            <jmx_endpoint/>
+                            <timeout>3s</timeout>
+                            <url/>
+                            <query_fields/>
+                            <posts/>
+                            <status_codes>200</status_codes>
+                            <follow_redirects>1</follow_redirects>
+                            <post_type>0</post_type>
+                            <http_proxy/>
+                            <headers/>
+                            <retrieve_mode>0</retrieve_mode>
+                            <request_method>1</request_method>
+                            <output_format>0</output_format>
+                            <allow_traps>0</allow_traps>
+                            <ssl_cert_file/>
+                            <ssl_key_file/>
+                            <ssl_key_password/>
+                            <verify_peer>0</verify_peer>
+                            <verify_host>0</verify_host>
+                            <application_prototypes>
+                                <application_prototype>
+                                    <name>BE Job: {#JOB.NAME}</name>
+                                </application_prototype>
+                            </application_prototypes>
+                            <master_item/>
+                        </item_prototype>
+                    </item_prototypes>
+                    <trigger_prototypes>
+                        <trigger_prototype>
+                            <expression>{Template Backup Exec Server:db.odbc.select[be.job.full.{#JOB.NAME}.finaljobstatus,{HOST.HOST}].count(#2,19,ne)}&lt;&gt;0</expression>
+                            <recovery_mode>0</recovery_mode>
+                            <recovery_expression/>
+                            <name>Backup job {#JOB.NAME}: {ITEM.VALUE}</name>
+                            <correlation_mode>0</correlation_mode>
+                            <correlation_tag/>
+                            <url/>
+                            <status>0</status>
+                            <priority>3</priority>
+                            <description>Backup job {#JOB.NAME} finished with error: {ITEM.LASTVALUE}.</description>
+                            <type>0</type>
+                            <manual_close>0</manual_close>
+                            <dependencies/>
+                            <tags>
+                                <tag>
+                                    <tag>app</tag>
+                                    <value>backup exec</value>
+                                </tag>
+                                <tag>
+                                    <tag>job type</tag>
+                                    <value>{#JOB.TYPE}</value>
+                                </tag>
+                                <tag>
+                                    <tag>service</tag>
+                                    <value>backup</value>
+                                </tag>
+                            </tags>
+                        </trigger_prototype>
+                    </trigger_prototypes>
+                    <graph_prototypes>
+                        <graph_prototype>
+                            <name>{#JOB.NAME}: Saved Data Size</name>
+                            <width>900</width>
+                            <height>200</height>
+                            <yaxismin>0.0000</yaxismin>
+                            <yaxismax>100.0000</yaxismax>
+                            <show_work_period>1</show_work_period>
+                            <show_triggers>1</show_triggers>
+                            <type>0</type>
+                            <show_legend>1</show_legend>
+                            <show_3d>0</show_3d>
+                            <percent_left>0.0000</percent_left>
+                            <percent_right>0.0000</percent_right>
+                            <ymin_type_1>0</ymin_type_1>
+                            <ymax_type_1>0</ymax_type_1>
+                            <ymin_item_1>0</ymin_item_1>
+                            <ymax_item_1>0</ymax_item_1>
+                            <graph_items>
+                                <graph_item>
+                                    <sortorder>0</sortorder>
+                                    <drawtype>5</drawtype>
+                                    <color>1A7C11</color>
+                                    <yaxisside>0</yaxisside>
+                                    <calc_fnc>2</calc_fnc>
+                                    <type>0</type>
+                                    <item>
+                                        <host>Template Backup Exec Server</host>
+                                        <key>db.odbc.select[be.job.full.{#JOB.NAME}.totalbytes,{HOST.HOST}]</key>
+                                    </item>
+                                </graph_item>
+                            </graph_items>
+                        </graph_prototype>
+                    </graph_prototypes>
+                    <host_prototypes/>
+                    <jmx_endpoint/>
+                    <timeout>3s</timeout>
+                    <url/>
+                    <query_fields/>
+                    <posts/>
+                    <status_codes>200</status_codes>
+                    <follow_redirects>1</follow_redirects>
+                    <post_type>0</post_type>
+                    <http_proxy/>
+                    <headers/>
+                    <retrieve_mode>0</retrieve_mode>
+                    <request_method>1</request_method>
+                    <allow_traps>0</allow_traps>
+                    <ssl_cert_file/>
+                    <ssl_key_file/>
+                    <ssl_key_password/>
+                    <verify_peer>0</verify_peer>
+                    <verify_host>0</verify_host>
+                </discovery_rule>
+                <discovery_rule>
+                    <name>Backup Exec Jobs Discovery (INCREMENTAL)</name>
+                    <type>11</type>
+                    <snmp_community/>
+                    <snmp_oid/>
+                    <key>db.odbc.discovery[be.jobs.incr,{HOST.HOST}]</key>
+                    <delay>1h</delay>
+                    <status>0</status>
+                    <allowed_hosts/>
+                    <snmpv3_contextname/>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                    <snmpv3_privpassphrase/>
+                    <params>SELECT JobID as 'JOB.ID', JobName as 'JOB.NAME', CurrentStatus as 'JOB.STATUS', IIF (JobRunFlags = 16777216, 'INCR', 'FULL') as 'JOB.TYPE'&#13;
+FROM BEDB.dbo.vwJobs&#13;
+WHERE TaskTypeID = 200 and CurrentStatus IN ('16','17','18');</params>
+                    <ipmi_sensor/>
+                    <authtype>0</authtype>
+                    <username>{$BE.USER}</username>
+                    <password>{$BE.PASSWORD}</password>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <filter>
+                        <evaltype>0</evaltype>
+                        <formula/>
+                        <conditions>
+                            <condition>
+                                <macro>{#JOB.TYPE}</macro>
+                                <value>^INCR$</value>
+                                <operator>8</operator>
+                                <formulaid>A</formulaid>
+                            </condition>
+                        </conditions>
+                    </filter>
+                    <lifetime>7d</lifetime>
+                    <description>Discover Incremental Backup Exec jobs by SQL query.</description>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>{#JOB.NAME}: Final Job Status</name>
+                            <type>11</type>
+                            <snmp_community/>
+                            <snmp_oid/>
+                            <key>db.odbc.select[be.job.incr.{#JOB.NAME}.finaljobstatus,{HOST.HOST}]</key>
+                            <delay>15m</delay>
+                            <history>{$HISTORY}</history>
+                            <trends>{$TRENDS}</trends>
+                            <status>0</status>
+                            <value_type>3</value_type>
+                            <allowed_hosts/>
+                            <units/>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <params>SELECT ISNULL ((SELECT TOP 1 FinalJobStatus FROM BEDB.dbo.JobHistorySummary WHERE JobID = '{#JOB.ID}' and IsJobActive != 1 ORDER BY EndTime DESC), 0);</params>
+                            <ipmi_sensor/>
+                            <authtype>0</authtype>
+                            <username>{$BE.USER}</username>
+                            <password>{$BE.PASSWORD}</password>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description>{#JOB.NAME} final job status</description>
+                            <inventory_link>0</inventory_link>
+                            <applications/>
+                            <valuemap>
+                                <name>Backup Exec Job Status</name>
+                            </valuemap>
+                            <logtimefmt/>
+                            <preprocessing/>
+                            <jmx_endpoint/>
+                            <timeout>3s</timeout>
+                            <url/>
+                            <query_fields/>
+                            <posts/>
+                            <status_codes>200</status_codes>
+                            <follow_redirects>1</follow_redirects>
+                            <post_type>0</post_type>
+                            <http_proxy/>
+                            <headers/>
+                            <retrieve_mode>0</retrieve_mode>
+                            <request_method>0</request_method>
+                            <output_format>0</output_format>
+                            <allow_traps>0</allow_traps>
+                            <ssl_cert_file/>
+                            <ssl_key_file/>
+                            <ssl_key_password/>
+                            <verify_peer>0</verify_peer>
+                            <verify_host>0</verify_host>
+                            <application_prototypes>
+                                <application_prototype>
+                                    <name>BE Job: {#JOB.NAME}</name>
+                                </application_prototype>
+                            </application_prototypes>
+                            <master_item/>
+                        </item_prototype>
+                        <item_prototype>
+                            <name>{#JOB.NAME}: Total Data Size, bytes</name>
+                            <type>11</type>
+                            <snmp_community/>
+                            <snmp_oid/>
+                            <key>db.odbc.select[be.job.incr.{#JOB.NAME}.totalbytes,{HOST.HOST}]</key>
+                            <delay>15m</delay>
+                            <history>{$HISTORY}</history>
+                            <trends>{$TRENDS}</trends>
+                            <status>0</status>
+                            <value_type>3</value_type>
+                            <allowed_hosts/>
+                            <units>B</units>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <params>SELECT ISNULL ((SELECT TOP 1 TotalDataSizeBytes FROM BEDB.dbo.JobHistorySummary WHERE JobID = '{#JOB.ID}' and IsJobActive != 1 ORDER BY EndTime DESC), 0);</params>
+                            <ipmi_sensor/>
+                            <authtype>0</authtype>
+                            <username>{$BE.USER}</username>
+                            <password>{$BE.PASSWORD}</password>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description>{#JOB.NAME} total bytes</description>
+                            <inventory_link>0</inventory_link>
+                            <applications/>
+                            <valuemap/>
+                            <logtimefmt/>
+                            <preprocessing/>
+                            <jmx_endpoint/>
+                            <timeout>3s</timeout>
+                            <url/>
+                            <query_fields/>
+                            <posts/>
+                            <status_codes>200</status_codes>
+                            <follow_redirects>1</follow_redirects>
+                            <post_type>0</post_type>
+                            <http_proxy/>
+                            <headers/>
+                            <retrieve_mode>0</retrieve_mode>
+                            <request_method>0</request_method>
+                            <output_format>0</output_format>
+                            <allow_traps>0</allow_traps>
+                            <ssl_cert_file/>
+                            <ssl_key_file/>
+                            <ssl_key_password/>
+                            <verify_peer>0</verify_peer>
+                            <verify_host>0</verify_host>
+                            <application_prototypes>
+                                <application_prototype>
+                                    <name>BE Job: {#JOB.NAME}</name>
+                                </application_prototype>
+                            </application_prototypes>
+                            <master_item/>
+                        </item_prototype>
+                    </item_prototypes>
+                    <trigger_prototypes>
+                        <trigger_prototype>
+                            <expression>{Template Backup Exec Server:db.odbc.select[be.job.incr.{#JOB.NAME}.finaljobstatus,{HOST.HOST}].count(#2,19,ne)}&lt;&gt;0</expression>
+                            <recovery_mode>0</recovery_mode>
+                            <recovery_expression/>
+                            <name>Backup job {#JOB.NAME}: {ITEM.VALUE}</name>
+                            <correlation_mode>0</correlation_mode>
+                            <correlation_tag/>
+                            <url/>
+                            <status>0</status>
+                            <priority>2</priority>
+                            <description>Backup job {#JOB.NAME} finished with error: {ITEM.LASTVALUE}.</description>
+                            <type>0</type>
+                            <manual_close>0</manual_close>
+                            <dependencies/>
+                            <tags>
+                                <tag>
+                                    <tag>app</tag>
+                                    <value>backup exec</value>
+                                </tag>
+                                <tag>
+                                    <tag>job type</tag>
+                                    <value>{#JOB.TYPE}</value>
+                                </tag>
+                                <tag>
+                                    <tag>service</tag>
+                                    <value>backup</value>
+                                </tag>
+                            </tags>
+                        </trigger_prototype>
+                    </trigger_prototypes>
+                    <graph_prototypes>
+                        <graph_prototype>
+                            <name>{#JOB.NAME}: Saved Data Size (incremental)</name>
+                            <width>900</width>
+                            <height>200</height>
+                            <yaxismin>0.0000</yaxismin>
+                            <yaxismax>100.0000</yaxismax>
+                            <show_work_period>1</show_work_period>
+                            <show_triggers>1</show_triggers>
+                            <type>0</type>
+                            <show_legend>1</show_legend>
+                            <show_3d>0</show_3d>
+                            <percent_left>0.0000</percent_left>
+                            <percent_right>0.0000</percent_right>
+                            <ymin_type_1>0</ymin_type_1>
+                            <ymax_type_1>0</ymax_type_1>
+                            <ymin_item_1>0</ymin_item_1>
+                            <ymax_item_1>0</ymax_item_1>
+                            <graph_items>
+                                <graph_item>
+                                    <sortorder>0</sortorder>
+                                    <drawtype>5</drawtype>
+                                    <color>1A7C11</color>
+                                    <yaxisside>0</yaxisside>
+                                    <calc_fnc>2</calc_fnc>
+                                    <type>0</type>
+                                    <item>
+                                        <host>Template Backup Exec Server</host>
+                                        <key>db.odbc.select[be.job.incr.{#JOB.NAME}.totalbytes,{HOST.HOST}]</key>
+                                    </item>
+                                </graph_item>
+                            </graph_items>
+                        </graph_prototype>
+                    </graph_prototypes>
+                    <host_prototypes/>
+                    <jmx_endpoint/>
+                    <timeout>3s</timeout>
+                    <url/>
+                    <query_fields/>
+                    <posts/>
+                    <status_codes>200</status_codes>
+                    <follow_redirects>1</follow_redirects>
+                    <post_type>0</post_type>
+                    <http_proxy/>
+                    <headers/>
+                    <retrieve_mode>0</retrieve_mode>
+                    <request_method>0</request_method>
+                    <allow_traps>0</allow_traps>
+                    <ssl_cert_file/>
+                    <ssl_key_file/>
+                    <ssl_key_password/>
+                    <verify_peer>0</verify_peer>
+                    <verify_host>0</verify_host>
+                </discovery_rule>
+                <discovery_rule>
+                    <name>Backup Exec Services</name>
+                    <type>7</type>
+                    <snmp_community/>
+                    <snmp_oid/>
+                    <key>service.discovery</key>
+                    <delay>3h</delay>
+                    <status>0</status>
+                    <allowed_hosts/>
+                    <snmpv3_contextname/>
+                    <snmpv3_securityname/>
+                    <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                    <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                    <snmpv3_authpassphrase/>
+                    <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                    <snmpv3_privpassphrase/>
+                    <params/>
+                    <ipmi_sensor/>
+                    <authtype>0</authtype>
+                    <username/>
+                    <password/>
+                    <publickey/>
+                    <privatekey/>
+                    <port/>
+                    <filter>
+                        <evaltype>0</evaltype>
+                        <formula/>
+                        <conditions>
+                            <condition>
+                                <macro>{#SERVICE.NAME}</macro>
+                                <value>^BackupExec|bedbg</value>
+                                <operator>8</operator>
+                                <formulaid>A</formulaid>
+                            </condition>
+                            <condition>
+                                <macro>{#SERVICE.STARTUP}</macro>
+                                <value>0</value>
+                                <operator>8</operator>
+                                <formulaid>B</formulaid>
+                            </condition>
+                        </conditions>
+                    </filter>
+                    <lifetime>3d</lifetime>
+                    <description>Discovery Backup Exec Services.</description>
+                    <item_prototypes>
+                        <item_prototype>
+                            <name>Service {#SERVICE.NAME} status</name>
+                            <type>7</type>
+                            <snmp_community/>
+                            <snmp_oid/>
+                            <key>service.info[{#SERVICE.NAME}]</key>
+                            <delay>1m</delay>
+                            <history>{$HISTORY}</history>
+                            <trends>{$TRENDS}</trends>
+                            <status>0</status>
+                            <value_type>3</value_type>
+                            <allowed_hosts/>
+                            <units/>
+                            <snmpv3_contextname/>
+                            <snmpv3_securityname/>
+                            <snmpv3_securitylevel>0</snmpv3_securitylevel>
+                            <snmpv3_authprotocol>0</snmpv3_authprotocol>
+                            <snmpv3_authpassphrase/>
+                            <snmpv3_privprotocol>0</snmpv3_privprotocol>
+                            <snmpv3_privpassphrase/>
+                            <params/>
+                            <ipmi_sensor/>
+                            <authtype>0</authtype>
+                            <username/>
+                            <password/>
+                            <publickey/>
+                            <privatekey/>
+                            <port/>
+                            <description>{#SERVICE.NAME} status&#13;
+&#13;
+Display name: {#SERVICE.DISPLAYNAME}&#13;
+Description: {#SERVICE.DESCRIPTION}</description>
+                            <inventory_link>0</inventory_link>
+                            <applications>
+                                <application>
+                                    <name>Backup Exec Services</name>
+                                </application>
+                            </applications>
+                            <valuemap>
+                                <name>Windows service state</name>
+                            </valuemap>
+                            <logtimefmt/>
+                            <preprocessing/>
+                            <jmx_endpoint/>
+                            <timeout>3s</timeout>
+                            <url/>
+                            <query_fields/>
+                            <posts/>
+                            <status_codes>200</status_codes>
+                            <follow_redirects>1</follow_redirects>
+                            <post_type>0</post_type>
+                            <http_proxy/>
+                            <headers/>
+                            <retrieve_mode>0</retrieve_mode>
+                            <request_method>1</request_method>
+                            <output_format>0</output_format>
+                            <allow_traps>0</allow_traps>
+                            <ssl_cert_file/>
+                            <ssl_key_file/>
+                            <ssl_key_password/>
+                            <verify_peer>0</verify_peer>
+                            <verify_host>0</verify_host>
+                            <application_prototypes/>
+                            <master_item/>
+                        </item_prototype>
+                    </item_prototypes>
+                    <trigger_prototypes>
+                        <trigger_prototype>
+                            <expression>{Template Backup Exec Server:service.info[{#SERVICE.NAME}].count(#5,0,ne)}&gt;3</expression>
+                            <recovery_mode>0</recovery_mode>
+                            <recovery_expression/>
+                            <name>Service {#SERVICE.NAME} in {ITEM.VALUE} state</name>
+                            <correlation_mode>0</correlation_mode>
+                            <correlation_tag/>
+                            <url/>
+                            <status>0</status>
+                            <priority>2</priority>
+                            <description>Service {#SERVICE.NAME} ({#SERVICE.DISPLAYNAME}) not in 'Running' state</description>
+                            <type>0</type>
+                            <manual_close>0</manual_close>
+                            <dependencies/>
+                            <tags>
+                                <tag>
+                                    <tag>app</tag>
+                                    <value>backup exec</value>
+                                </tag>
+                                <tag>
+                                    <tag>service</tag>
+                                    <value>backup</value>
+                                </tag>
+                                <tag>
+                                    <tag>windows service</tag>
+                                    <value>{ITEM.VALUE}</value>
+                                </tag>
+                            </tags>
+                        </trigger_prototype>
+                    </trigger_prototypes>
+                    <graph_prototypes/>
+                    <host_prototypes/>
+                    <jmx_endpoint/>
+                    <timeout>3s</timeout>
+                    <url/>
+                    <query_fields/>
+                    <posts/>
+                    <status_codes>200</status_codes>
+                    <follow_redirects>1</follow_redirects>
+                    <post_type>0</post_type>
+                    <http_proxy/>
+                    <headers/>
+                    <retrieve_mode>0</retrieve_mode>
+                    <request_method>1</request_method>
+                    <allow_traps>0</allow_traps>
+                    <ssl_cert_file/>
+                    <ssl_key_file/>
+                    <ssl_key_password/>
+                    <verify_peer>0</verify_peer>
+                    <verify_host>0</verify_host>
+                </discovery_rule>
+            </discovery_rules>
+            <httptests/>
+            <macros>
+                <macro>
+                    <macro>{$BE.PASSWORD}</macro>
+                    <value>PASSWORD</value>
+                </macro>
+                <macro>
+                    <macro>{$BE.USER}</macro>
+                    <value>LOGIN</value>
+                </macro>
+                <macro>
+                    <macro>{$HISTORY}</macro>
+                    <value>14d</value>
+                </macro>
+                <macro>
+                    <macro>{$TRENDS}</macro>
+                    <value>180d</value>
+                </macro>
+            </macros>
+            <templates/>
+            <screens/>
+        </template>
+    </templates>
+    <value_maps>
+        <value_map>
+            <name>Backup Exec Job Status</name>
+            <mappings>
+                <mapping>
+                    <value>1</value>
+                    <newvalue>Terminated because canceled</newvalue>
+                </mapping>
+                <mapping>
+                    <value>2</value>
+                    <newvalue>Completed waiting for final disposition</newvalue>
+                </mapping>
+                <mapping>
+                    <value>3</value>
+                    <newvalue>Completed with exceptions</newvalue>
+                </mapping>
+                <mapping>
+                    <value>4</value>
+                    <newvalue>Dispatched</newvalue>
+                </mapping>
+                <mapping>
+                    <value>5</value>
+                    <newvalue>On hold</newvalue>
+                </mapping>
+                <mapping>
+                    <value>6</value>
+                    <newvalue>Completed with an error</newvalue>
+                </mapping>
+                <mapping>
+                    <value>7</value>
+                    <newvalue>Schedule invalid</newvalue>
+                </mapping>
+                <mapping>
+                    <value>8</value>
+                    <newvalue>Invalid Time Window</newvalue>
+                </mapping>
+                <mapping>
+                    <value>9</value>
+                    <newvalue>Missed</newvalue>
+                </mapping>
+                <mapping>
+                    <value>10</value>
+                    <newvalue>Missed</newvalue>
+                </mapping>
+                <mapping>
+                    <value>11</value>
+                    <newvalue>Paused</newvalue>
+                </mapping>
+                <mapping>
+                    <value>12</value>
+                    <newvalue>Pending</newvalue>
+                </mapping>
+                <mapping>
+                    <value>13</value>
+                    <newvalue>Recovered</newvalue>
+                </mapping>
+                <mapping>
+                    <value>14</value>
+                    <newvalue>Resource Disabled</newvalue>
+                </mapping>
+                <mapping>
+                    <value>15</value>
+                    <newvalue>Resumed</newvalue>
+                </mapping>
+                <mapping>
+                    <value>16</value>
+                    <newvalue>Running</newvalue>
+                </mapping>
+                <mapping>
+                    <value>17</value>
+                    <newvalue>Ready</newvalue>
+                </mapping>
+                <mapping>
+                    <value>18</value>
+                    <newvalue>Scheduled</newvalue>
+                </mapping>
+                <mapping>
+                    <value>19</value>
+                    <newvalue>Completed successfully</newvalue>
+                </mapping>
+                <mapping>
+                    <value>20</value>
+                    <newvalue>Superceded</newvalue>
+                </mapping>
+                <mapping>
+                    <value>21</value>
+                    <newvalue>Abort (Time)</newvalue>
+                </mapping>
+                <mapping>
+                    <value>22</value>
+                    <newvalue>To Be Scheduled</newvalue>
+                </mapping>
+                <mapping>
+                    <value>23</value>
+                    <newvalue>Linked to another job</newvalue>
+                </mapping>
+                <mapping>
+                    <value>24</value>
+                    <newvalue>UNKNOWN</newvalue>
+                </mapping>
+                <mapping>
+                    <value>25</value>
+                    <newvalue>Blocked by Template Rule</newvalue>
+                </mapping>
+            </mappings>
+        </value_map>
+        <value_map>
+            <name>Windows service state</name>
+            <mappings>
+                <mapping>
+                    <value>0</value>
+                    <newvalue>Running</newvalue>
+                </mapping>
+                <mapping>
+                    <value>1</value>
+                    <newvalue>Paused</newvalue>
+                </mapping>
+                <mapping>
+                    <value>2</value>
+                    <newvalue>Start pending</newvalue>
+                </mapping>
+                <mapping>
+                    <value>3</value>
+                    <newvalue>Pause pending</newvalue>
+                </mapping>
+                <mapping>
+                    <value>4</value>
+                    <newvalue>Continue pending</newvalue>
+                </mapping>
+                <mapping>
+                    <value>5</value>
+                    <newvalue>Stop pending</newvalue>
+                </mapping>
+                <mapping>
+                    <value>6</value>
+                    <newvalue>Stopped</newvalue>
+                </mapping>
+                <mapping>
+                    <value>7</value>
+                    <newvalue>Unknown</newvalue>
+                </mapping>
+                <mapping>
+                    <value>255</value>
+                    <newvalue>No such service</newvalue>
+                </mapping>
+            </mappings>
+        </value_map>
+    </value_maps>
+</zabbix_export>
